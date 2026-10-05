@@ -1,0 +1,48 @@
+name: Pokémon Stock-Bot
+
+# Läuft kostenlos auf GitHub (öffentliches Repo). Ein Job prüft ~5h50min lang
+# jede Minute; der stündliche Zeitplan sorgt dafür, dass direkt danach der
+# nächste Job startet (immer nur einer gleichzeitig).
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: pokemon-stock-bot
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Letzten Zustand laden
+        uses: actions/cache/restore@v4
+        with:
+          path: pokemon-stock-bot/state.json
+          key: stock-state-${{ github.run_id }}
+          restore-keys: stock-state-
+
+      - name: Shops jede Minute prüfen
+        working-directory: pokemon-stock-bot
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: python bot.py --duration 345
+
+      - name: Zustand speichern
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: pokemon-stock-bot/state.json
+          key: stock-state-${{ github.run_id }}

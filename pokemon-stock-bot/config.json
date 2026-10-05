@@ -1,0 +1,47 @@
+{
+  "interval_seconds": 60,
+
+  "filter": {
+    "include_regex": "30th|30 ?jahre|30\\. ?(jubil|anniv)",
+    "exclude_regex": "\\b(deutsch|german|de|japanisch|japanese|jp|jpn|koreanisch|korean|kor|chinesisch|chinese|französisch|french|italienisch|italian|spanisch|spanish)\\b",
+    "english_regex": "\\b(englisch|english|eng|en)\\b"
+  },
+
+  "shops": [
+    {
+      "name": "TCGviert",
+      "type": "shopify",
+      "url": "https://tcgviert.com",
+      "queries": ["30th Celebration"],
+      "require_english_marker": true
+    },
+    {
+      "name": "Gate to the Games",
+      "type": "shopify",
+      "url": "https://gate-to-the-games.de",
+      "queries": ["30th Celebration"],
+      "require_english_marker": true
+    },
+    {
+      "name": "Magic Madhouse (UK)",
+      "type": "shopify",
+      "url": "https://magicmadhouse.co.uk",
+      "queries": ["30th Celebration"],
+      "require_english_marker": false
+    },
+    {
+      "name": "Total Cards (UK)",
+      "type": "shopify",
+      "url": "https://totalcards.net",
+      "queries": ["30th Celebration"],
+      "require_english_marker": false
+    },
+    {
+      "name": "BEISPIEL – einzelne Produktseite (URL ersetzen, dann enabled auf true)",
+      "type": "page",
+      "enabled": false,
+      "url": "https://www.example-shop.de/pokemon-30th-celebration-elite-trainer-box-englisch",
+      "title": "30th Celebration Elite Trainer Box (EN)"
+    }
+  ]
+}
