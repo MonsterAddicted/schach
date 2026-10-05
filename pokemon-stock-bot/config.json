@@ -1,39 +1,127 @@
 {
   "interval_seconds": 60,
-
   "filter": {
     "include_regex": "30th|30 ?jahre|30\\. ?(jubil|anniv)",
-    "exclude_regex": "\\b(deutsch|german|de|japanisch|japanese|jp|jpn|koreanisch|korean|kor|chinesisch|chinese|französisch|french|italienisch|italian|spanisch|spanish)\\b",
+    "exclude_regex": "\\b(deutsch|german|de|japanisch|japanese|jp|jpn|koreanisch|korean|kor|chinesisch|chinese|französisch|french|italienisch|italian|spanisch|spanish|plüsch|plush|glitzer|select serie|select-serie|multipack)\\b",
     "english_regex": "\\b(englisch|english|eng|en)\\b"
   },
-
   "shops": [
+    {
+      "name": "Kartenchaos (Graz, Herrgottwiesgasse 117)",
+      "type": "auto",
+      "url": "https://kartenchaos.at",
+      "search_url": "https://kartenchaos.at/search?q={q}",
+      "require_english_marker": true,
+      "queries": [
+        "30th Celebration",
+        "Pokemon 30 Jahre"
+      ]
+    },
+    {
+      "name": "Spielewerk (Graz, Annenstraße 35)",
+      "type": "auto",
+      "url": "https://www.spielewerk.at",
+      "search_url": "https://www.spielewerk.at/search?q={q}",
+      "require_english_marker": true,
+      "queries": [
+        "30th Celebration",
+        "Pokemon 30 Jahre"
+      ]
+    },
+    {
+      "name": "Smyths Toys (Graz, Shopping Center West)",
+      "type": "search",
+      "search_url": "https://www.smythstoys.com/at/de-at/search/?text={q}",
+      "require_english_marker": true,
+      "queries": [
+        "30th Celebration",
+        "Pokemon 30 Jahre"
+      ]
+    },
+    {
+      "name": "Müller (Graz)",
+      "type": "search",
+      "search_url": "https://www.mueller.at/search/?q={q}",
+      "require_english_marker": true,
+      "queries": [
+        "30th Celebration",
+        "Pokemon 30 Jahre"
+      ]
+    },
+    {
+      "name": "MediaMarkt (Graz)",
+      "type": "search",
+      "search_url": "https://www.mediamarkt.at/de/search.html?query={q}",
+      "require_english_marker": true,
+      "queries": [
+        "30th Celebration",
+        "Pokemon 30 Jahre"
+      ]
+    },
+    {
+      "name": "Libro (Graz)",
+      "type": "search",
+      "search_url": "https://www.libro.at/search?sSearch={q}",
+      "require_english_marker": true,
+      "queries": [
+        "30th Celebration",
+        "Pokemon 30 Jahre"
+      ]
+    },
+    {
+      "name": "Thalia (Graz)",
+      "type": "search",
+      "search_url": "https://www.thalia.at/suche?sq={q}",
+      "require_english_marker": true,
+      "queries": [
+        "30th Celebration",
+        "Pokemon 30 Jahre"
+      ]
+    },
+    {
+      "name": "Kastner & Öhler (Graz)",
+      "type": "search",
+      "search_url": "https://www.kastner-oehler.at/search?q={q}",
+      "require_english_marker": true,
+      "queries": [
+        "30th Celebration",
+        "Pokemon 30 Jahre"
+      ]
+    },
     {
       "name": "TCGviert",
       "type": "shopify",
       "url": "https://tcgviert.com",
-      "queries": ["30th Celebration"],
+      "queries": [
+        "30th Celebration"
+      ],
       "require_english_marker": true
     },
     {
       "name": "Gate to the Games",
       "type": "shopify",
       "url": "https://gate-to-the-games.de",
-      "queries": ["30th Celebration"],
+      "queries": [
+        "30th Celebration"
+      ],
       "require_english_marker": true
     },
     {
       "name": "Magic Madhouse (UK)",
       "type": "shopify",
       "url": "https://magicmadhouse.co.uk",
-      "queries": ["30th Celebration"],
+      "queries": [
+        "30th Celebration"
+      ],
       "require_english_marker": false
     },
     {
       "name": "Total Cards (UK)",
       "type": "shopify",
       "url": "https://totalcards.net",
-      "queries": ["30th Celebration"],
+      "queries": [
+        "30th Celebration"
+      ],
       "require_english_marker": false
     },
     {

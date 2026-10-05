@@ -235,7 +235,122 @@ def check_page(shop: dict) -> list[Product]:
     )]
 
 
-CHECKERS = {"shopify": check_shopify, "page": check_page}
+# ---------------------------------------------------------- WooCommerce-Shops
+
+def check_woocommerce(shop: dict) -> list[Product]:
+    """Nutzt die öffentliche WooCommerce Store API (liefert is_in_stock)."""
+    base = shop["url"].rstrip("/")
+    found: dict[str, Product] = {}
+    for query in shop.get("queries", ["30th Celebration"]):
+        params = urllib.parse.urlencode({"search": query, "per_page": 20})
+        data = json.loads(fetch(f"{base}/wp-json/wc/store/v1/products?{params}"))
+        for p in parse_woocommerce(data, shop["name"]):
+            found[p.key] = p
+    return list(found.values())
+
+
+def parse_woocommerce(data: list, shop_name: str) -> list[Product]:
+    if not isinstance(data, list):
+        raise ValueError("keine WooCommerce-Antwort")
+    out = []
+    for p in data:
+        prices = p.get("prices") or {}
+        price = ""
+        if prices.get("price"):
+            minor = int(prices.get("currency_minor_unit", 2))
+            price = f"{int(prices['price']) / 10 ** minor:.2f} {prices.get('currency_code', '')}".strip()
+        out.append(Product(
+            shop=shop_name,
+            title=html.unescape(re.sub(r"<[^>]+>", "", p.get("name", ""))).strip(),
+            url=p.get("permalink", ""),
+            available=bool(p.get("is_in_stock")) and p.get("is_purchasable", True) is not False,
+            price=price,
+        ))
+    return out
+
+
+# ------------------------------------------- Beliebiger Shop über Suchseite
+
+ANCHOR_RE = re.compile(r'<a\b[^>]*?href=["\']([^"\'#]+)["\'][^>]*>(.*?)</a>', re.S | re.I)
+
+
+def find_product_links(page: str, page_url: str, include: re.Pattern) -> list[str]:
+    """Sucht auf einer Suchergebnisseite Links, die nach einem passenden Produkt aussehen."""
+    host = urllib.parse.urlparse(page_url).netloc
+    links: dict[str, None] = {}
+    for href, inner in ANCHOR_RE.findall(page):
+        url = urllib.parse.urljoin(page_url, html.unescape(href))
+        parsed = urllib.parse.urlparse(url)
+        if parsed.netloc != host or parsed.scheme not in ("http", "https"):
+            continue
+        text = html.unescape(re.sub(r"<[^>]+>", " ", inner))
+        slug = re.sub(r"[-_/+]", " ", urllib.parse.unquote(parsed.path))
+        if include.search(f"{text} {slug}"):
+            links[url.split("#")[0]] = None
+    return list(links)
+
+
+def check_search(shop: dict, include: re.Pattern | None = None) -> list[Product]:
+    """Öffnet die Suchseite des Shops, folgt passenden Produktlinks und
+    liest auf jeder Produktseite den Lagerstatus aus."""
+    include = include or re.compile(r"30th|30 ?jahre", re.I)
+    links: list[str] = []
+    for query in shop.get("queries", ["30th Celebration"]):
+        url = shop["search_url"].replace("{q}", urllib.parse.quote_plus(query))
+        for link in find_product_links(fetch(url), url, include):
+            if link not in links:
+                links.append(link)
+    out = []
+    for link in links[: shop.get("max_products", 8)]:
+        try:
+            page = fetch(link)
+        except Exception as e:  # noqa: BLE001
+            log(f"   {shop['name']}: {link} nicht ladbar ({e})")
+            continue
+        available, note = page_availability(page, shop)
+        if available is None:
+            log(f"   {shop['name']}: Lagerstatus auf {link} nicht erkennbar")
+            continue
+        out.append(Product(shop=shop["name"], title=page_title(page) or link,
+                           url=link, available=available, note=note))
+    return out
+
+
+# ------------------------------------------------- Automatische Erkennung
+
+def check_auto(shop: dict, include: re.Pattern | None = None) -> list[Product]:
+    """Probiert Shopify, dann WooCommerce, dann die Suchseite (search_url).
+    Was einmal funktioniert hat, wird für die folgenden Durchläufe gemerkt."""
+    detected = shop.get("_detected")
+    if detected:
+        return _run_checker(detected, shop, include)
+    order = ["shopify", "woocommerce"] + (["search"] if shop.get("search_url") else [])
+    errors = []
+    for kind in order:
+        try:
+            products = _run_checker(kind, shop, include)
+        except Exception as e:  # noqa: BLE001
+            errors.append(f"{kind}: {type(e).__name__}")
+            continue
+        shop["_detected"] = kind
+        log(f"   {shop['name']}: erkannt als '{kind}'")
+        return products
+    raise RuntimeError("kein passender Shop-Typ (" + ", ".join(errors) + ")")
+
+
+def _run_checker(kind: str, shop: dict, include: re.Pattern | None) -> list[Product]:
+    if kind == "search":
+        return check_search(shop, include)
+    return CHECKERS[kind](shop)
+
+
+CHECKERS = {
+    "shopify": check_shopify,
+    "woocommerce": check_woocommerce,
+    "page": check_page,
+    "search": check_search,
+    "auto": check_auto,
+}
 
 
 # ------------------------------------------------------------------- E-Mail
@@ -306,12 +421,15 @@ def run_once(cfg: dict, state: dict, title_filter: TitleFilter) -> list[Product]
     for shop in cfg["shops"]:
         if not shop.get("enabled", True):
             continue
-        kind = shop.get("type", "shopify")
-        try:
-            products = CHECKERS[kind](shop)
-        except KeyError:
+        kind = shop.get("type", "auto")
+        if kind not in CHECKERS:
             log(f"!! {shop['name']}: unbekannter Typ '{kind}'")
             continue
+        try:
+            if kind in ("search", "auto"):
+                products = CHECKERS[kind](shop, title_filter.include)
+            else:
+                products = CHECKERS[kind](shop)
         except urllib.error.HTTPError as e:
             log(f"!! {shop['name']}: HTTP {e.code}")
             continue

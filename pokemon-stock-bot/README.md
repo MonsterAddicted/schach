@@ -41,34 +41,55 @@ Windows (PowerShell): `$env:SMTP_USER="..."` und `$env:SMTP_PASSWORD="..."`, dan
 
 Ein Durchlauf zum Testen, ohne Endlosschleife: `python3 bot.py --once`
 
-## 3. Shops hinzufügen / ändern → `config.json`
+## 3. Welche Shops werden geprüft?
 
-Es gibt zwei Shop-Typen:
+**Shops mit Geschäft in Graz:**
 
-* **`shopify`**: Für Shops, die auf Shopify laufen (sehr viele TCG-Shops). Der Bot durchsucht
-  den ganzen Shop nach `queries` und liest den Lagerstatus direkt aus. Ob ein Shop Shopify nutzt,
-  erkennst du so: `https://SHOP/search/suggest.json?q=pokemon` im Browser öffnen. Kommt JSON
-  zurück, passt es.
-* **`page`**: Eine einzelne Produktseite, z.B. bei Amazon, Müller oder Smyths. Der Bot liest den
-  Lagerstatus aus den Produktdaten der Seite oder sucht nach Wörtern wie „ausverkauft“ und
-  „In den Warenkorb“.
+| Shop | Geschäft in Graz |
+|---|---|
+| Kartenchaos | Herrgottwiesgasse 117 (TCG-Fachgeschäft) |
+| Spielewerk | Annenstraße 35 (Spiele & Trading Cards) |
+| Smyths Toys | Shopping Center West, Weblinger Gürtel 25 |
+| Müller | mehrere Filialen |
+| MediaMarkt | mehrere Filialen |
+| Libro | mehrere Filialen |
+| Thalia | mehrere Filialen |
+| Kastner & Öhler | Sackstraße (Spielwarenabteilung) |
+
+Dazu kommen die Online-Shops TCGviert, Gate to the Games, Magic Madhouse und Total Cards.
+Trading Cards United (Münzgrabenstraße 10) hat keinen Online-Shop und fehlt deshalb.
+
+Bei allen Shops in Graz muss im Titel „Englisch“, „English“ oder „EN“ stehen, weil dort meist
+die deutsche Version („30 Jahre“) verkauft wird.
+
+## 4. Shops hinzufügen / ändern → `config.json`
+
+| Typ | Wofür |
+|---|---|
+| `auto` | Probiert selbst aus, ob der Shop auf Shopify oder WooCommerce läuft, sonst nutzt er `search_url`. **Für neue Shops am einfachsten.** |
+| `shopify` | Shopify-Shops. Liest den Lagerstatus direkt aus, sehr zuverlässig. |
+| `woocommerce` | WordPress-/WooCommerce-Shops. Ebenfalls zuverlässig. |
+| `search` | Beliebiger Shop: Öffnet die Suchseite, folgt den passenden Produktlinks und liest dort den Lagerstatus. `{q}` in `search_url` wird durch den Suchbegriff ersetzt. |
+| `page` | Eine einzelne Produktseite. |
 
 ```json
-{ "name": "Mein Shop", "type": "shopify", "url": "https://mein-shop.de",
+{ "name": "Mein Shop", "type": "auto", "url": "https://mein-shop.at",
+  "search_url": "https://mein-shop.at/suche?q={q}",
   "queries": ["30th Celebration"], "require_english_marker": true }
-
-{ "name": "Smyths ETB", "type": "page",
-  "url": "https://www.smyths-toys.com/de/de-de/...", "title": "30th ETB EN" }
 ```
 
-`require_english_marker: true` heißt: Der Produkttitel muss „Englisch“, „English“ oder „EN“
-enthalten. Das ist sinnvoll bei deutschen Shops, die mehrere Sprachen verkaufen. Titel mit
-„Deutsch“, „Japanisch“, „JP“ usw. werden immer aussortiert (`filter` in der Config).
+`require_english_marker: true` heißt: Im Produkttitel muss „Englisch“, „English“ oder „EN“
+stehen. Titel mit „Deutsch“, „Japanisch“, „JP“, „Plüsch“ usw. werden immer aussortiert
+(`filter` in der Config).
 
 ## Gut zu wissen
 
 * Der erste Start meldet alles, was **gerade schon** auf Lager ist. Danach kommen nur noch
   neue Treffer.
+* **Erster Test:** `python3 bot.py --once` zeigt für jeden Shop, ob er funktioniert.
+  Große Ketten (MediaMarkt, Müller, Smyths, Thalia) bauen ihre Suchseiten teils erst im
+  Browser zusammen oder blocken Bots. Dann findet der Bot dort nichts. In dem Fall eine
+  konkrete Produktseite als `page` eintragen, sobald das Produkt online gelistet ist.
 * Steht im Log `!! Shopname: HTTP 403` oder `Verfügbarkeit nicht erkennbar`, blockt der Shop Bots
   (z.B. Pokémon Center, Amazon). Dann den Shop entfernen oder lokal statt auf GitHub laufen lassen.
 * Bitte das Intervall nicht unter 60 Sekunden setzen, sonst sperren Shops dich eher.
